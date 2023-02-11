@@ -1,0 +1,149 @@
+[tool.poetry]
+name = "airflow-ci"
+version = "0.0.1"
+description = ""
+authors = ["phi.friday <phi.friday@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "airflow_ci" }]
+
+[tool.poetry.dependencies]
+python = "^3.10, <3.11"
+pydantic = "^1.10.4"
+orjson = "^3.8.6"
+pyyaml = "^6.0"
+toml = "^0.10.2"
+httpx = "^0.23.3"
+gitpython = "^3.1.30"
+fastapi = "^0.91.0"
+apache-airflow = "^2.5.1"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.1.0"
+isort = "^5.12.0"
+ruff = "^0.0.245"
+pre-commit = "^3.0.4"
+
+[tool.ruff]
+target-version = "py310"
+select = [
+    "F",   # Pyflakes
+    "E",
+    "W",   # pycodestyle
+    "C",   # mccabe
+    "I",   # unsorted-imports
+    "N",   # pep8-naming
+    "D",   # pydocstyle
+    "UP",  # pyupgrade
+    "YTT", # flake8-2020
+    "ANN", # flake8-annotations
+    "S",   # flake8-bandit
+    "BLE", # flake8-blind-except
+    "FBT", # flake8-boolean-trap
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "COM", # flake8-commas
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T10", # flake8-debugger
+    "EM",  # flake8-errmsg
+    "EXE", # flake8-executable
+    "ISC", # flake8-implicit-str-concat
+    "ICN", # flake8-import-conventions
+    "G",   # flake8-logging-format
+    "INP", # flake8-no-pep420
+    "PIE", # flake8-pie
+    "T20", # flake8-print
+    "PT",  # flake8-pytest-style
+    "Q",   # flake8-quotes
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+    "TCH", # flake8-type-checking
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "ERA", # eradicate
+    "PD",  # pandas-vet
+    "PGH", # pygrep-hooks
+    "PLC",
+    "PLE",
+    "PLR",
+    "PLW", # Pylint
+    "TRY", # tryceratops
+    # "RSE", # flake8-raise
+    # "SLF", # flake8-self
+    "RUF", # Ruff-specific rules
+]
+fixable = [
+    'F401', # unused imports
+    "F522", # string-dot-format-extra-named-arguments
+    "F541", # f-string-missing-placeholders
+    "W292", # no-new-line-at-end-of-file
+    # "E711", # none-comparison
+    # "E712", # true-false-comparison
+    "E713",   # not-in-test
+    "E714",   # not-is-test
+    "I001",   # unsorted-imports
+    "COM812", # trailing-comma-missing
+    "Q000",   # bad-quotes-inline-string
+    "Q001",   # bad-quotes-multiline-string
+    "UP034",  # extraneous-parentheses
+    "UP035",  # import-replacements
+    "SIM108", # use-ternary-operator	
+    "RUF005", # unpack-instead-of-concatenating-to-collection-literal
+    "C401",   # unnecessary-generator-set
+    "UP034",  # extraneous-parentheses
+    "UP035",  # import-replacements
+    "SIM108", # use-ternary-operator	
+    "RUF005", # unpack-instead-of-concatenating-to-collection-literal
+    "C401",   # unnecessary-generator-set
+]
+ignore = [
+    'E712',   # TrueFalseComparison # sqlalchemy
+    "E711",   # none-comparison # sqlalchemy
+    "D100",   # public-module
+    "D104",   # public-package
+    "D107",   # public-init
+    "D201",   # no-blank-line-before-function
+    "D202",   # no-blank-line-after-function
+    "D203",   # one-blank-line-before-class
+    "D204",   # one-blank-line-after-class
+    "D211",   # no-blank-line-before-class
+    "D212",   # multi-line-summary-first-line
+    "D213",   # multi-line-summary-second-line
+    "D400",   # ends-in-period
+    "D401",   # non-imperative-mood
+    "D403",   # first-line-capitalized
+    "D406",   # new-line-after-section-name
+    "D407",   # dashed-underline-after-section
+    "D415",   # ends-in-punctuation
+    "EM101",  # raw-string-in-exception
+    "TRY003", # raise-vanilla-args
+    "ANN101", # missing-type-self
+    "ANN102", # missing-type-cls
+    "ANN401", # dynamically-typed-expression
+    "FBT002", # boolean-default-value-in-function-definition
+    "PGH003", # blanket-type-ignore
+    "SIM117", # multiple-with-statements # python3.8
+    "B905",   # zip-without-explicit-strict
+    "PD010",  # use-of-dot-pivot-or-unstack
+]
+
+[tool.ruff.per-file-ignores]
+"**/*.pyi" = ['TCH001', 'TCH002', 'ARG001', 'FBT001']
+
+[tool.ruff.pylint]
+max-args = 10
+
+[tool.ruff.pyupgrade]
+keep-runtime-typing = true
+
+[tool.ruff.isort]
+known-first-party = ["airflow_ci"]
+
+[tool.isort]
+known_first_party = ["airflow_ci"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

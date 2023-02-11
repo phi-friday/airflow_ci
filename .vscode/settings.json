@@ -1,0 +1,14 @@
+{
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": "\\.pyi?$",
+                "isAsync": true,
+                "cmd": "poetry run ${workspaceFolder}/script/clean.sh ${file}"
+            }
+        ]
+    },
+    "ruff.path": [
+        ".venv/bin/ruff"
+    ],
+}
