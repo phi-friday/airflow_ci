@@ -1,10 +1,19 @@
 [tool.poetry]
 name = "airflow-ci"
 version = "0.0.1"
-description = ""
+description = "ci tool using airflow"
 authors = ["phi.friday <phi.friday@gmail.com>"]
+license = "MIT License"
 readme = "README.md"
 packages = [{ include = "airflow_ci" }]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+]
 
 [tool.poetry.dependencies]
 python = "^3.10, <3.11"
