@@ -1,10 +1,30 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Protocol, type_check_only
 
-if TYPE_CHECKING:
-    from requests import Session
+try:
+    from airflow.decorators import task  # type: ignore
+    from airflow.models.dagrun import DagRun  # type: ignore
+    from airflow.models.taskinstance import TaskInstance  # type: ignore
+    from airflow.models.xcom_arg import XComArg  # type: ignore
+    from airflow.providers.http.hooks.http import HttpHook  # type: ignore
+    from airflow.utils.context import Context  # type: ignore
+except (ModuleNotFoundError, ImportError):
+    task = None
+    DagRun = None
+    TaskInstance = None
+    XcomArg = None
+    HttpHook = None
+    Context = None
 
-__all__ = ["DagRunState", "HttpHook"]
+
+__all__ = [
+    "DagRunState",
+    "HttpHook",
+    "DagRun",
+    "TaskInstance",
+    "XComArg",
+    "Context",
+    "task",
+]
 
 
 class DagRunState(str, Enum):
@@ -14,16 +34,3 @@ class DagRunState(str, Enum):
     RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
-
-
-@type_check_only
-class HttpHook(Protocol):
-    """airflow http provider hook"""
-
-    base_url: str
-
-    def get_conn(  # noqa: D102
-        self,
-        headers: dict[Any, Any] | None = None,
-    ) -> "Session":
-        ...

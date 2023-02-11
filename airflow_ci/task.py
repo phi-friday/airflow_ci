@@ -2,13 +2,11 @@ import asyncio
 import logging
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Union, cast
 
-from airflow.decorators import task
-from airflow.exceptions import AirflowException
-from airflow.providers.http.hooks.http import HttpHook
 from git.repo import Repo
 
+from airflow_ci.airflow import HttpHook, task
 from airflow_ci.const import (
     PIPELINE_DOCKER_CONTAINER_NAME,
     PIPELINE_DOCKER_TASK_ID,
@@ -27,9 +25,7 @@ from airflow_ci.pipeline import (
 )
 
 if TYPE_CHECKING:
-    from airflow.models.dagrun import DagRun
-    from airflow.models.xcom_arg import XComArg
-    from airflow.utils.context import Context
+    from airflow_ci.airflow import Context, DagRun, TaskInstance, XComArg
 
 
 __all__ = ["go_step", "create_docker_step_task"]
@@ -45,12 +41,11 @@ def go_step(**context: Any) -> None:
         AirflowFailException: there is no task instance
     """
     cont = cast("Context", context)
-    task_instance = cont.get("ti", None)
+    task_instance = cast(Union["TaskInstance", None], cont.get("ti", None))
 
     if task_instance is None:
-        raise AirflowException("there is no task_instance")
-    dagrun: "DagRun" = task_instance.dag_run  # type: ignore
-
+        raise RuntimeError("there is no task_instance")
+    dagrun = task_instance.dag_run
     conf = StepDagRunConf.parse_obj(dagrun.conf)
 
     dummy_pipeline = Pipeline(
@@ -97,7 +92,7 @@ async def go_pipeline_async(context: "Context") -> None:
     task_instance = context.get("ti", None)
 
     if task_instance is None:
-        raise AirflowException("there is no task_instance")
+        raise RuntimeError("there is no task_instance")
     dagrun: "DagRun" = task_instance.dag_run  # type: ignore
 
     conf = PipelineDagRunConf.parse_obj(dagrun.conf)
