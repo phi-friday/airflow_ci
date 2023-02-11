@@ -1,4 +1,3 @@
 *.pyc
-*.lock
 /.python-version
 /.venv
