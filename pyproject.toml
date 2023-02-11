@@ -79,8 +79,8 @@ fixable = [
     "F522", # string-dot-format-extra-named-arguments
     "F541", # f-string-missing-placeholders
     "W292", # no-new-line-at-end-of-file
-    # "E711", # none-comparison
-    # "E712", # true-false-comparison
+    "E711", # none-comparison
+    "E712", # true-false-comparison
     "E713",   # not-in-test
     "E714",   # not-is-test
     "I001",   # unsorted-imports
