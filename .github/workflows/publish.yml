@@ -30,7 +30,7 @@ jobs:
         run: |
           VERSION=$(dunamai from any --no-metadata --style pep440)
           poetry version $VERSION
-          echo "__version__ = \"$VERSION\"" > expression/_version.py
+          echo "__version__ = \"$VERSION\"" > airflow_ci/__init__.py
 
       - name: Build package
         run: poetry build
