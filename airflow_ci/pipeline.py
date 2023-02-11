@@ -17,11 +17,10 @@ import httpx
 import orjson
 import toml
 import yaml
-from airflow.exceptions import AirflowException, AirflowFailException
-from airflow.utils.state import DagRunState
 from pydantic import BaseModel as _BaseModel
 from pydantic import DirectoryPath, Field, root_validator
 
+from airflow_ci.airflow import DagRunState
 from airflow_ci.const import (
     PIPELINE_DOCKER_DAG_ID,
     PIPELINE_DOCKER_TASK_ID,
@@ -36,8 +35,9 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator
     from subprocess import CompletedProcess
 
-    from airflow.providers.http.hooks.http import HttpHook
     from typing_extensions import Self
+
+    from airflow_ci.airflow import HttpHook
 
 __all__ = [
     "Status",
@@ -792,11 +792,11 @@ class Step(BaseStep):
                 if state == DagRunState.SUCCESS:
                     break
                 if state in DagRunState.FAILED:
-                    raise AirflowFailException("pipe step dag failed, %s", dag_run_id)
+                    raise RuntimeError("pipe step dag failed, %s", dag_run_id)
                 logger.info("wait for %s success", dag_run_id)
                 time += HTTP_SLEEP
             else:
-                raise AirflowException("pipe step dag timeout, %s", dag_run_id)
+                raise TimeoutError("pipe step dag timeout, %s", dag_run_id)
 
             xcom = await client.get(
                 url="dags/{dag_id}/dagRuns/{dag_run_id}/taskInstances"
