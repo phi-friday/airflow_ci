@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 import httpx
 import orjson
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, Header, HTTPException, Request, status
 from fastapi.logger import logger
 from fastapi.responses import ORJSONResponse
 
@@ -53,21 +53,27 @@ async def log_gitea_webhook(request: Request) -> Any:
 
 
 @app.post("/hook")
-async def transport_webhook(request: Request) -> Any:
+async def transport_webhook(
+    request: Request,
+    hook_module: str | None = Header(default=None),  # noqa: B008
+    hook_type: str | None = Header(default=None),  # noqa: B008
+    airflow_http_conn_id: str | None = Header(default=None),  # noqa: B008
+    git_http_conn_id: str | None = Header(default=None),  # noqa: B008
+) -> Any:
     """transport webhook data to airflow"""
 
     body = await request.body()
     webhook_data = orjson.loads(body)
     header = dict(request.headers.mutablecopy())
-    data = {"webhook": webhook_data, "header": header}
+    data: "WebhookApiData" = {"webhook": webhook_data, "header": header}
 
     conf = PipelineDagRunConf(
         temp_dir=settings.temp_dir,
         webhook=data,
-        hook_module=settings.hook_module,
-        hook_type=settings.hook_type,
-        airflow_http_conn_id=settings.airflow_http_conn_id,
-        git_http_conn_id=settings.git_http_conn_id,
+        hook_module=hook_module or settings.hook_module,
+        hook_type=hook_type or settings.hook_type,
+        airflow_http_conn_id=airflow_http_conn_id or settings.airflow_http_conn_id,
+        git_http_conn_id=git_http_conn_id or settings.git_http_conn_id,
     )
     async with httpx.AsyncClient(
         base_url=settings.airflow_base_url,

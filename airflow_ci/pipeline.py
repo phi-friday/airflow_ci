@@ -29,7 +29,7 @@ from airflow_ci.const import (
     PIPELINE_SUFFIXES,
     PIPELINE_TEMP_DIR,
 )
-from airflow_ci.webhook.attrs import BaseWebHook, HookKey, HookType
+from airflow_ci.webhook.attrs import BaseWebHook, HookKey, HookType, WebhookApiData
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -830,14 +830,14 @@ class PipelineDagRunConf(BaseModel):
 
     temp_dir: DirectoryPath
 
-    webhook: dict[str, Any]
+    webhook: WebhookApiData
     hook_module: str | None = Field(default=None)
     hook_type: str
 
     airflow_http_conn_id: str
     git_http_conn_id: str
 
-    def get_hook(self) -> "BaseWebHook":
+    def get_hook(self, http_hook: Union["HttpHook", None] = None) -> "BaseWebHook":
         """parse webhook object
 
         Returns:
@@ -855,7 +855,7 @@ class PipelineDagRunConf(BaseModel):
                 modulename = ".".join(module_elements)
             module = importlib.import_module(modulename)
             webhook_model = module.WebHook
-        return webhook_model.parse_webhook(self.webhook)
+        return webhook_model.parse_webhook(self.webhook, http_hook)
 
 
 @contextmanager

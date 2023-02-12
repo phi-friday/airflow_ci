@@ -10,6 +10,7 @@ from airflow_ci.webhook.attrs import (
     BaseRepository,
     BaseUser,
     BaseWebHook,
+    HookKey,
     HookType,
     WebhookApiData,
 )
@@ -258,6 +259,13 @@ class WebHook(BaseWebHook):
             repo=repository,
             commit=commit,
             pull_request=pull_request,
+        )
+
+    def create_key(self) -> HookKey:  # noqa: D102
+        return HookKey(
+            event=self.hook_type,
+            branch=self.commit.branch,
+            user=self.commit.author.username,
         )
 
 

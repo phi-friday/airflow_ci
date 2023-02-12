@@ -96,9 +96,9 @@ async def go_pipeline_async(context: "Context") -> None:
     dagrun: "DagRun" = task_instance.dag_run  # type: ignore
 
     conf = PipelineDagRunConf.parse_obj(dagrun.conf)
-    hook = conf.get_hook()
     airflow_http_hook = HttpHook(conf.airflow_http_conn_id)
     git_http_hook = HttpHook(conf.git_http_conn_id)
+    hook = conf.get_hook(git_http_hook)
 
     with temp_dir_context(conf.temp_dir) as path:
         git_dir = path / hook.repo.name.replace("/", "_")
