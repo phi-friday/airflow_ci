@@ -17,7 +17,7 @@ from airflow_ci.const import (
 from airflow_ci.pipeline import (
     Pipeline,
     PipelineDagRunConf,
-    PipeLineFile,
+    PipelineFile,
     Step,
     StepDagRunConf,
     StepResult,
@@ -111,7 +111,7 @@ async def go_pipeline_async(context: "Context") -> None:
         commit = repo.commit(hook.commit.key)
         repo.git.checkout(commit.name_rev.split()[0])
 
-        pipeline = PipeLineFile.load_file(git_dir).to_pipeline(git_dir)
+        pipeline = PipelineFile.load_file(git_dir).to_pipeline(git_dir)
 
         results = await pipeline.go(
             hook,

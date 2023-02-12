@@ -7,18 +7,27 @@ import uuid
 from contextlib import ExitStack, contextmanager
 from datetime import datetime, timedelta, timezone
 from enum import Enum
+from functools import wraps
 from itertools import chain, repeat
 from pathlib import Path
 from tempfile import gettempdir
 from traceback import format_exception
-from typing import TYPE_CHECKING, Any, ContextManager, TypeAlias, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ContextManager,
+    ParamSpec,
+    TypeAlias,
+    TypeVar,
+    Union,
+)
 
 import httpx
 import orjson
 import toml
 import yaml
 from pydantic import BaseModel as _BaseModel
-from pydantic import DirectoryPath, Field, root_validator
+from pydantic import Field, root_validator
 
 from airflow_ci.airflow import DagRunState
 from airflow_ci.const import (
@@ -43,7 +52,7 @@ __all__ = [
     "Status",
     "Condition",
     "Flag",
-    "PipeLineFile",
+    "PipelineFile",
     "Pipeline",
     "StepResult",
     "Step",
@@ -56,6 +65,8 @@ logger = logging.getLogger("airflow.task")
 Env: TypeAlias = dict[str, str]
 HTTP_TIMEOUT = 10
 HTTP_SLEEP = 10
+ParamT = ParamSpec("ParamT")
+ValueT = TypeVar("ValueT")
 
 
 def _orjson_dumps(value: Any, *, default: Any) -> str:
@@ -160,18 +171,18 @@ class Condition(BaseModel):
         )
 
 
-class PipeLineFile(BaseModel):
+class PipelineFile(BaseModel):
     """pipeline file"""
 
-    steps: list["Step"] = Field(default_factory=list)
+    steps: list["BaseStep"] = Field(default_factory=list)
     conditions: list[Condition] = Field(default_factory=list)
     env: Env = Field(default_factory=dict)
     timeout: int = Field(default=60 * 20)
-    temp_dir: DirectoryPath = Field(
+    temp_dir: Path = Field(
         default_factory=lambda: PIPELINE_TEMP_DIR / str(uuid.uuid4()),
     )
 
-    def update_step(self, func: "Callable[[Step], Step]") -> "Self":
+    def update_step(self, func: "Callable[[BaseStep], BaseStep]") -> "Self":
         """update step as func
 
         Args:
@@ -190,13 +201,8 @@ class PipeLineFile(BaseModel):
             pipeline
         """
 
-        steps = {step.name: step for step in self.steps}
-        for step in self.steps:
-            for upper in step.upper:
-                step.set_upper(upper, callback=True)
-            for lower in step.lower:
-                step.set_lower(lower, callback=True)
-        return Pipeline(
+        steps = {step.name: Step.from_base(step) for step in self.steps}
+        pipeline = Pipeline(
             steps=steps,
             conditions=self.conditions,
             env=self.env,
@@ -204,6 +210,15 @@ class PipeLineFile(BaseModel):
             temp_dir=self.temp_dir,
             git_dir=git_dir,
         )
+        for step in pipeline.steps.values():
+            step.pipeline = pipeline
+
+        for step in pipeline.steps.values():
+            for upper in step.upper:
+                step.set_upper(upper, callback=True)
+            for lower in step.lower:
+                step.set_lower(lower, callback=True)
+        return pipeline
 
     @classmethod
     def load_file(cls, path: Path) -> "Self":
@@ -274,8 +289,8 @@ class Pipeline(BaseModel):
     conditions: list[Condition]
     env: Env
     timeout: int
-    temp_dir: DirectoryPath
-    git_dir: DirectoryPath
+    temp_dir: Path
+    git_dir: Path
 
     def check(self, hook: "BaseWebHook") -> bool:
         """check if pipeline should be run
@@ -501,6 +516,26 @@ class Step(BaseStep):
 
     pipeline: Pipeline
     result: StepResult | None = Field(default=None)
+
+    @classmethod
+    def from_base(cls, base: BaseStep) -> "Self":
+        """from base step
+
+        Args:
+            base: base step
+
+        Returns:
+            base step with dummy pipeline
+        """
+        dummy = Pipeline(
+            steps={},
+            conditions=[],
+            env={},
+            timeout=0,
+            temp_dir=Path(gettempdir()),
+            git_dir=Path(gettempdir()),
+        )
+        return cls(**base.dict(), pipeline=dummy)
 
     def set_upper(self, step: Union["Step", str], *, callback: bool) -> "Self":
         """set upper
@@ -822,14 +857,14 @@ class StepDagRunConf(BaseModel):
     """airflow step dagrun conf"""
 
     step: BaseStep
-    temp_dir: DirectoryPath
-    git_dir: DirectoryPath
+    temp_dir: Path
+    git_dir: Path
 
 
 class PipelineDagRunConf(BaseModel):
     """airflow pipeline dagrun conf"""
 
-    temp_dir: DirectoryPath
+    temp_dir: Path
 
     webhook: WebhookApiData
     hook_module: str | None = Field(default=None)
@@ -883,3 +918,24 @@ def _rmdir(path: Path) -> None:
         else:
             item.unlink(missing_ok=False)
     path.rmdir()
+
+
+def _add_exclude(
+    func: "Callable[ParamT, ValueT]",
+    exclude: str,
+) -> "Callable[ParamT, ValueT]":
+    @wraps(func)
+    def _inner(*args: ParamT.args, **kwargs: ParamT.kwargs) -> ValueT:
+        if "exclude" not in kwargs:
+            kwargs["exclude"] = {exclude}
+        return func(*args, **kwargs)
+
+    return _inner
+
+
+PipelineFile.update_forward_refs()
+Pipeline.update_forward_refs()
+Pipeline.dict = _add_exclude(Pipeline.dict, "steps")
+Pipeline.json = _add_exclude(Pipeline.json, "steps")
+Step.dict = _add_exclude(Step.dict, "pipeline")
+Step.json = _add_exclude(Step.json, "pipeline")
