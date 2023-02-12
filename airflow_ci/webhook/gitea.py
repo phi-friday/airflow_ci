@@ -95,8 +95,6 @@ class WebHook(BaseWebHook):
                 return HookType.PUSH
         if header["x-gitea-event"] == "pull_request":
             return HookType.PULL_REQEUST
-        if header["x-gitea-event"] == "release":
-            return HookType.RELEASE
         raise NotImplementedError()
 
     @classmethod
@@ -162,7 +160,7 @@ class WebHook(BaseWebHook):
             raise NotImplementedError()
 
         data = webhook["webhook"]
-        if hook_type in {HookType.BRANCH, HookType.PUSH, HookType.RELEASE}:
+        if hook_type in {HookType.BRANCH, HookType.PUSH}:
             commit_data = data["head_commit"]
             return Commit(
                 key=commit_data["id"],
@@ -211,7 +209,6 @@ class WebHook(BaseWebHook):
             HookType.TAG,
             HookType.PUSH,
             HookType.PULL_REQEUST,
-            HookType.RELEASE,
         }:
             return BaseRepository(
                 name=repo_data["name"],
@@ -259,7 +256,7 @@ def _parse_branch(data: dict[str, Any], *, hook_type: HookType) -> str | None:
         return None
     if hook_type == HookType.PUSH:
         return str(data["ref"]).removeprefix("refs/heads/")
-    if hook_type in {HookType.PULL_REQEUST, HookType.RELEASE}:
+    if hook_type == HookType.PULL_REQEUST:
         return None
 
     raise NotImplementedError()

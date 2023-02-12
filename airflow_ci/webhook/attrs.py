@@ -30,7 +30,6 @@ class HookType(str, Enum):
     PULL_REQEUST = "pull_request"
     BRANCH = "branch"
     TAG = "tag"
-    RELEASE = "release"
 
 
 class BaseUser(BaseModel):
