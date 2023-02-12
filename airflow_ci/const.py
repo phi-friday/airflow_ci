@@ -3,7 +3,7 @@ from tempfile import gettempdir
 from typing import Final
 
 PIPELINE_FILENAME: Final[str] = ".pipeline"
-PIPELINE_SUFFIXES: Final[list[str]] = ["yaml", ".json", "toml"]
+PIPELINE_SUFFIXES: Final[list[str]] = ["yaml", "yml", ".json", "toml"]
 
 PIPELINE_DAG_ID: Final[str] = "pipeline_dag"
 PIPELINE_TASK_ID: Final[str] = "pipeline_task"

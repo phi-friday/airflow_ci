@@ -221,7 +221,8 @@ class PipeLineFile(BaseModel):
         filename = path / PIPELINE_FILENAME
         for suffix, func in zip(
             PIPELINE_SUFFIXES,
-            (cls.load_yaml, cls.parse_file, cls.load_toml),
+            (cls.load_yaml, cls.load_yaml, cls.parse_file, cls.load_toml),
+            strict=True,
         ):
             file = filename.with_suffix(suffix)
             if not file.is_file():
