@@ -22,7 +22,9 @@ async def log_webhook(request: Request) -> Any:
     """body to log"""
 
     body = await request.body()
-    data = orjson.loads(body)
+    webhook_data = orjson.loads(body)
+    header = dict(request.headers.mutablecopy())
+    data = {"webhook": webhook_data, "header": header}
 
     logger.info("%s", orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
     return data
@@ -33,7 +35,9 @@ async def transport_webhook(request: Request) -> Any:
     """transport webhook data to airflow"""
 
     body = await request.body()
-    data = orjson.loads(body)
+    webhook_data = orjson.loads(body)
+    header = dict(request.headers.mutablecopy())
+    data = {"webhook": webhook_data, "header": header}
 
     conf = PipelineDagRunConf(
         temp_dir=settings.temp_dir,
