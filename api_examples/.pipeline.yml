@@ -1,0 +1,38 @@
+conditions:
+-   branch: ^dev.*
+    event: pull_request
+    user: test_user
+-   branch: ^main$
+    event: push
+    user: test_user_2
+env:
+    env_key1: env_value1
+    env_key2: env_value2
+timeout: 1200
+
+steps:
+-   cwd: null
+    image: iamge:first
+    lower:
+    - third
+    name: first
+    script:
+    - script 1
+    - script 2
+    - script 3
+    timeout: 130
+-   cwd: null
+    image: iamge:second
+    lower:
+    - third
+    name: second
+    script:
+    - script 4
+    - script 5
+    - script 6
+    timeout: 134
+-   cwd: ./airflow_ci/api
+    image: iamge:first
+    name: third
+    script:
+    - script 4
