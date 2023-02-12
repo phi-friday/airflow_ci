@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING, Any, TypedDict, final
 
-from pydantic import AnyHttpUrl, AnyUrl, BaseModel, EmailStr, Field
+from pydantic import AnyHttpUrl, BaseModel, EmailStr, Field
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -49,7 +49,7 @@ class BaseRepository(BaseModel):
     fork: bool
     owner: BaseUser
     html_url: AnyHttpUrl
-    ssh_url: AnyUrl
+    ssh_url: str
     clone_url: AnyHttpUrl
     default_branch: str
 
