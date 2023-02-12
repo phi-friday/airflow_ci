@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from traceback import format_exception_only
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 import orjson
@@ -11,6 +11,10 @@ from fastapi.responses import ORJSONResponse
 from airflow_ci.api.config import settings
 from airflow_ci.const import PIPELINE_DAG_ID
 from airflow_ci.pipeline import PipelineDagRunConf
+from airflow_ci.webhook.gitea import WebHook
+
+if TYPE_CHECKING:
+    from airflow_ci.webhook.attrs import WebhookApiData
 
 __all__ = ["app"]
 
@@ -24,9 +28,27 @@ async def log_webhook(request: Request) -> Any:
     body = await request.body()
     webhook_data = orjson.loads(body)
     header = dict(request.headers.mutablecopy())
-    data = {"webhook": webhook_data, "header": header}
+    data: "WebhookApiData" = {"webhook": webhook_data, "header": header}
 
     logger.info("%s", orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
+    return data
+
+
+@app.post("/gitea_log")
+async def log_gitea_webhook(request: Request) -> Any:
+    """gitea body to log"""
+
+    body = await request.body()
+    webhook_data = orjson.loads(body)
+    header = dict(request.headers.mutablecopy())
+    data: "WebhookApiData" = {"webhook": webhook_data, "header": header}
+
+    gitea_data = WebHook.parse_webhook(data)
+
+    logger.info(
+        "%s",
+        orjson.dumps(gitea_data.dict(), option=orjson.OPT_INDENT_2).decode(),
+    )
     return data
 
 

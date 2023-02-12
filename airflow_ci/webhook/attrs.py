@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any, final
+from typing import TYPE_CHECKING, Any, TypedDict, final
 
 from pydantic import AnyHttpUrl, AnyUrl, BaseModel, EmailStr, Field
 
@@ -11,7 +11,16 @@ if TYPE_CHECKING:
 
     from airflow_ci.pipeline import StepResult
 
-__all__ = ["HookType", "BaseUser", "BaseRepository", "BaseCommit", "HookKey"]
+__all__ = [
+    "HookType",
+    "BaseUser",
+    "BaseRepository",
+    "BaseCommitKey",
+    "BaseCommit",
+    "BasePullRequest",
+    "HookKey",
+    "WebhookApiData",
+]
 
 
 class HookType(str, Enum):
@@ -45,14 +54,56 @@ class BaseRepository(BaseModel):
     default_branch: str
 
 
-class BaseCommit(BaseModel):
-    """git commit"""
+class BaseCommitKey(BaseModel):
+    """git commit with only key"""
 
     key: str
+
+    def to_commit(
+        self,
+        webhook: "WebhookApiData",
+    ) -> "BaseCommit":
+        """get commit data from key
+
+        Args:
+            webhook: webhook body and header
+
+        Raises:
+            NotImplementedError: not impl.
+
+        Returns:
+            commit model
+        """
+
+        raise NotImplementedError()
+
+
+class BaseCommit(BaseCommitKey):
+    """git commit"""
+
     message: str
     url: AnyHttpUrl
     author: BaseUser
     commiter: BaseUser
+    ref: str | None
+    branch: str | None
+
+    def to_commit(  # noqa: D102
+        self,
+        webhook: "WebhookApiData",  # noqa: ARG002
+    ) -> "BaseCommit":
+        return self
+
+
+class BasePullRequest(BaseModel):
+    """git pr"""
+
+    id: int  # noqa: A003
+    user: BaseUser
+    html_url: AnyHttpUrl
+    diff_url: AnyHttpUrl
+    base: BaseCommitKey
+    head: BaseCommitKey
 
 
 class BaseWebHook(BaseModel):
@@ -61,9 +112,10 @@ class BaseWebHook(BaseModel):
     hook_type: HookType
     repo: BaseRepository
     commit: BaseCommit
+    pull_request: BasePullRequest | None = Field(default=None)
 
     @classmethod
-    def parse_webhook(cls, webhook: Any) -> "Self":
+    def parse_webhook(cls, webhook: "WebhookApiData") -> "Self":
         """parse webhook data
 
         Args:
@@ -100,3 +152,10 @@ class HookKey(BaseModel):
     event: HookType
     branch: str | None = Field(default=None)
     user: str | None = Field(default=None)
+
+
+class WebhookApiData(TypedDict, total=True):
+    """api server response data as json"""
+
+    webhook: dict[str, Any]
+    header: dict[str, Any]
