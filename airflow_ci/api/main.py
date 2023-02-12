@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from pprint import pformat
 from traceback import format_exception_only
 from typing import Any
 
@@ -25,7 +24,7 @@ async def log_webhook(request: Request) -> Any:
     body = await request.body()
     data = orjson.loads(body)
 
-    logger.info("%s", pformat(data))
+    logger.info("%s", orjson.dumps(data, option=orjson.OPT_INDENT_2).decode())
     return data
 
 
