@@ -129,7 +129,7 @@ class WebHook(BaseWebHook):
                 username=pr_data["user"]["username"],
             ),
             html_url=pr_data["html_url"],
-            diff_url=pr_data["dirr_url"],
+            diff_url=pr_data["diff_url"],
             base=CommitKey(
                 key=pr_data["base"]["sha"],
             ),
