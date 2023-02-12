@@ -171,7 +171,7 @@ class PipeLineFile(BaseModel):
         default_factory=lambda: PIPELINE_TEMP_DIR / str(uuid.uuid4()),
     )
 
-    def update_step(self, func: Callable[["Step"], "Step"]) -> "Self":
+    def update_step(self, func: "Callable[[Step], Step]") -> "Self":
         """update step as func
 
         Args:
@@ -291,7 +291,7 @@ class Pipeline(BaseModel):
 
         return any(condition.check(key) for condition in self.conditions)
 
-    def update_step(self, func: Callable[["Step"], "Step"]) -> "Self":
+    def update_step(self, func: "Callable[[Step], Step]") -> "Self":
         """update step as func
 
         Args:
