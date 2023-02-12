@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import TYPE_CHECKING, Any, TypedDict, final
+from typing import TYPE_CHECKING, Any, TypedDict, Union, final
 
 from pydantic import AnyHttpUrl, BaseModel, EmailStr, Field
 
@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from httpx import AsyncClient
     from typing_extensions import Self
 
+    from airflow_ci.airflow import HttpHook
     from airflow_ci.pipeline import StepResult
 
 __all__ = [
@@ -61,11 +62,14 @@ class BaseCommitKey(BaseModel):
     def to_commit(
         self,
         webhook: "WebhookApiData",
+        *,
+        http_hook: Union["HttpHook", None] = None,
     ) -> "BaseCommit":
         """get commit data from key
 
         Args:
             webhook: webhook body and header
+            http_hook: airflow http hook for git. Defaults to None.
 
         Raises:
             NotImplementedError: not impl.
@@ -90,6 +94,7 @@ class BaseCommit(BaseCommitKey):
     def to_commit(  # noqa: D102
         self,
         webhook: "WebhookApiData",  # noqa: ARG002
+        http_hook: Union["HttpHook", None] = None,  # noqa: ARG002
     ) -> "BaseCommit":
         return self
 
@@ -114,11 +119,16 @@ class BaseWebHook(BaseModel):
     pull_request: BasePullRequest | None = Field(default=None)
 
     @classmethod
-    def parse_webhook(cls, webhook: "WebhookApiData") -> "Self":
+    def parse_webhook(
+        cls,
+        webhook: "WebhookApiData",
+        http_hook: Union["HttpHook", None] = None,
+    ) -> "Self":
         """parse webhook data
 
         Args:
             webhook: webhook data
+            http_hook: airflow http hook for git. Defaults to None.
 
         Returns:
             webhook model

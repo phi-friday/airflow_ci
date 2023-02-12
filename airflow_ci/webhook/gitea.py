@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Any
+from contextlib import ExitStack
+from typing import TYPE_CHECKING, Any, Union
 
 import httpx
 
@@ -16,6 +17,8 @@ from airflow_ci.webhook.attrs import (
 if TYPE_CHECKING:
     from typing_extensions import Self
 
+    from airflow_ci.airflow import HttpHook
+
 
 class CommitKey(BaseCommitKey):
     """gitea commit key"""
@@ -23,20 +26,26 @@ class CommitKey(BaseCommitKey):
     def to_commit(  # noqa: D102
         self,
         webhook: "WebhookApiData",
+        http_hook: Union["HttpHook", None] = None,
     ) -> "Commit":
         repositoy = webhook["webhook"]["repository"]
         base_url = _parse_base_url(webhook["webhook"])
 
-        with httpx.Client(
-            base_url=base_url,
-            verify=False,  # noqa: S501
-        ) as client:
+        result = {}
+        with ExitStack() as stack:
+            if http_hook is not None:
+                client = stack.enter_context(http_hook.get_conn())
+            else:
+                client = stack.enter_context(
+                    httpx.Client(base_url=base_url, verify=False),  # noqa: S501
+                )
+
             response = client.get(
                 url="api/v1/repos/{owner}/{repo}/commits".format(
                     owner=repositoy["owner"]["username"],
                     repo=repositoy["name"],
                 ),
-                params={"sha": self.key},
+                params=(("sha", self.key),),
             )
             response.raise_for_status()
             result = response.json()[0]
@@ -142,12 +151,14 @@ class WebHook(BaseWebHook):
         webhook: WebhookApiData,
         *,
         hook_type: HookType,
+        http_hook: Union["HttpHook", None] = None,
     ) -> Commit:
         """parse commit data from webhook body
 
         Args:
             webhook: webhook data
             hook_type: hook type
+            http_hook: airflow http hook for git. Defaults to None.
 
         Raises:
             NotImplementedError: _description_
@@ -179,7 +190,7 @@ class WebHook(BaseWebHook):
             )
         if hook_type == HookType.TAG:
             commit_key = CommitKey(key=data["sha"])
-            return commit_key.to_commit(webhook=webhook)
+            return commit_key.to_commit(webhook=webhook, http_hook=http_hook)
 
         raise NotImplementedError()
 
@@ -230,12 +241,13 @@ class WebHook(BaseWebHook):
     def parse_webhook(  # noqa: D102
         cls,
         webhook: WebhookApiData,
+        http_hook: Union["HttpHook", None] = None,
     ) -> "Self":
         hook_type = cls.parse_type(webhook)
 
         if hook_type == HookType.PULL_REQEUST:
             pull_request = cls.parse_pull_request(webhook, hook_type=hook_type)
-            commit = pull_request.head.to_commit(webhook)
+            commit = pull_request.head.to_commit(webhook, http_hook=http_hook)
         else:
             pull_request = None
             commit = cls.parse_commit(webhook, hook_type=hook_type)
